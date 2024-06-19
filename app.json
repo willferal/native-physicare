@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "react-native-course",
-    "slug": "react-native-course",
+    "name": "physicare",
+    "slug": "physicare",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
+    "scheme": "physicare",
     "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/images/splash.png",
