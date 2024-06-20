@@ -24,7 +24,7 @@ export default function Perimetria() {
     try {
       console.log('Fetching fichasPerimetria for user:', userUID);
       const fichasCollection = collection(firestore, 'fichasPerimetria');
-      const q = query(fichasCollection);
+      const q = query(fichasCollection, where('patientUid', '==', userUID));
       const querySnapshot = await getDocs(q);
       const fichasData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       console.log('Fetched fichasPerimetria:', fichasData);

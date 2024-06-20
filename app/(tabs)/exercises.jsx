@@ -24,7 +24,7 @@ export default function FichasTreino() {
     try {
       console.log('Fetching fichasTreino for user:', userUID);
       const fichasCollection = collection(firestore, 'fichasTreino');
-      const q = query(fichasCollection);
+      const q = query(fichasCollection, where('patientUid', '==', userUID));
       const querySnapshot = await getDocs(q);
       const fichasData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       console.log('Fetched fichasTreino:', fichasData);
