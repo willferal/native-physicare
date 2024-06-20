@@ -1,9 +1,9 @@
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, Button, TextInput } from "react-native";
 import { Avatar, SearchBar, ListItem } from "@rneui/themed";
 import { Stack, router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
+import { useEffect, useState, useContext } from "react";
+import { collection, getDocs, setDoc, doc } from "firebase/firestore";
 import { firestore } from "../../lib/firebaseConfig";
 import { useAuth } from "../../context/auth";
 import { useSearch } from "../../context/search";
@@ -13,14 +13,9 @@ export default function SearchPage() {
   const { email } = useAuth();
   const { setSelectedUserContext } = useSearch();
   const [search, setSearch] = useState("");
-  const [users, setUsers] = useState([
-    {
-      name: 'will',
-      email: 'wilson@gmail.com',
-      gender: 'masculino'
-    }
-  ]);
+  const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
+  const { currentUser } = useAuth(); // Use useAuth to get currentUser
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -30,30 +25,67 @@ export default function SearchPage() {
       const filteredUsersData = usersData.filter(
         (user) => user.email !== email
       );
-      console.log(filteredUsersData)
+      console.log(filteredUsersData);
       setUsers(filteredUsersData);
       setFilteredUsers(filteredUsersData);
     };
     fetchUsers();
+  }, [email]);
+
+  useEffect(() => {
     const filteredResults = users.filter((user) =>
       user.name.toLowerCase().includes(search.toLowerCase())
     );
     setFilteredUsers(filteredResults);
-  }, []);
+  }, [search, users]);
 
-  //useEffect(() => {
-    // const filteredResults = users.filter((user) =>
-    //   user.name.toLowerCase().includes(search.toLowerCase())
-    // );
-    // setFilteredUsers(filteredResults);
-  //}, [search, users]);
+  function Item({ user, currentUser, setSelectedUserContext }) {
+    const [loading, setLoading] = useState(false);
+    const [problem, setProblem] = useState('');
+    const [text, setText] = useState('');
 
-  function Item({ user }) {
+    const handleRequest = async () => {
+      setLoading(true);
+      try {
+        await setDoc(
+          doc(firestore, "users", currentUser.uid, "myrequests", user.uid),
+          {
+            problem,
+            text,
+            status: "pending",
+            to: user.uid,
+            from: currentUser.uid,
+            name: user.name,
+            avatar: user.avatar,
+          }
+        );
+        await setDoc(
+          doc(firestore, "users", user.uid, "myrequests", currentUser.uid),
+          {
+            problem,
+            text,
+            status: "pending",
+            to: user.uid,
+            from: currentUser.uid,
+            name: user.name,
+            avatar: user.avatar,
+          }
+        );
+        setProblem('');
+        setText('');
+        setShow(false);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     return (
       <ListItem
         onPress={() => {
           setSelectedUserContext(user);
-          router.push(`/(protected)/search/${user.uid.toString()}`);
+          router.push(`/(protected)/search/${user.uid}`);
         }}
         key={user?.email}
         bottomDivider
@@ -63,6 +95,23 @@ export default function SearchPage() {
           <ListItem.Title>{user?.name}</ListItem.Title>
           <ListItem.Subtitle>{user?.email}</ListItem.Subtitle>
           <ListItem.Subtitle>{user?.gender}</ListItem.Subtitle>
+          <View>
+            <TextInput
+              className="min-w-full"
+              placeholder="Assunto:"
+              value={problem}
+              onChangeText={setProblem}
+              style={styles.input}
+            />
+            <TextInput
+              className="min-w-full"
+              placeholder=" Digite aqui:"
+              value={text}
+              onChangeText={setText}
+              style={styles.input}
+            />
+          </View>
+          <Button title="Enviar Solicitação" onPress={handleRequest} disabled={loading} />
         </ListItem.Content>
         <ListItem.Chevron />
       </ListItem>
@@ -82,7 +131,13 @@ export default function SearchPage() {
         />
         <FlatList
           data={filteredUsers}
-          renderItem={({ item }) => <Item user={item} />}
+          renderItem={({ item }) => (
+            <Item
+              user={item}
+              currentUser={currentUser}
+              setSelectedUserContext={setSelectedUserContext}
+            />
+          )}
           keyExtractor={(item) => item.email}
           style={{ width: "100%" }}
         />
@@ -102,5 +157,13 @@ const styles = StyleSheet.create({
   },
   searchBarContainer: {
     width: "100%",
+  },
+  input: {
+    height: 40,
+    borderColor: 'gray',
+    borderWidth: 1,
+    marginBottom: 10,
+    paddingLeft: 8,
+    borderRadius: 4,
   },
 });

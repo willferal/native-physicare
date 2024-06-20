@@ -45,7 +45,7 @@ export default function SignUp() {
   const [displayName, setDisplayName] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [gender, setGender] = useState("");
-  const [email, setEmail] = useState("wilson@gmail.com");
+  const [email, setEmail] = useState("email");
   const [password, setPassword] = useState("123456");
 
   const [date, setDate] = useState(new Date());
