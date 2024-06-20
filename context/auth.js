@@ -32,7 +32,7 @@ const useProtectedRoute = (user) => {
 
 export function AuthProvider({ children }) {
   const [user] = useAuthState(auth);
-  const [userUID, setUserUID] = useState(null)
+  const [userUID, setUserUID] = useState(null);
   const [displayName, setDisplayName] = useState(null);
   const [email, setEmail] = useState(null);
   const [photoURL, setPhotoURL] = useState(null);
@@ -61,7 +61,7 @@ export function AuthProvider({ children }) {
   useProtectedRoute(user);
 
   return (
-    <AuthContext.Provider value={{ userUID, displayName, email, photoURL, gender }}>
+    <AuthContext.Provider value={{ user, userUID, displayName, email, photoURL, gender }}>
       {children}
     </AuthContext.Provider>
   );
