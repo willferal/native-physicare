@@ -1,8 +1,8 @@
-import { StyleSheet, View, Button, TextInput } from "react-native";
+import { StyleSheet, View, Button, TextInput, Alert } from "react-native";
 import { Avatar, SearchBar, ListItem } from "@rneui/themed";
 import { Stack, router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState, useContext } from "react";
+import { useEffect, useState } from "react";
 import { collection, getDocs, setDoc, doc } from "firebase/firestore";
 import { firestore } from "../../lib/firebaseConfig";
 import { useAuth } from "../../context/auth";
@@ -10,29 +10,34 @@ import { useSearch } from "../../context/search";
 import { FlatList } from "react-native-gesture-handler";
 
 export default function SearchPage() {
-  const { email } = useAuth();
+  const { user, email } = useAuth();
   const { setSelectedUserContext } = useSearch();
   const [search, setSearch] = useState("");
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
-  const { currentUser } = useAuth(); // Use useAuth to get currentUser
 
   useEffect(() => {
     const fetchUsers = async () => {
-      const usersCollection = collection(firestore, "professionals");
-      const usersSnapshot = await getDocs(usersCollection);
-      const usersData = usersSnapshot.docs.map((doc) => doc.data());
-      const filteredUsersData = usersData.filter(
-        (user) => user.email !== email
-      );
-      console.log(filteredUsersData);
-      setUsers(filteredUsersData);
-      setFilteredUsers(filteredUsersData);
+      console.log("Fetching users...");
+      try {
+        const usersCollection = collection(firestore, "professionals");
+        const usersSnapshot = await getDocs(usersCollection);
+        const usersData = usersSnapshot.docs.map((doc) => doc.data());
+        const filteredUsersData = usersData.filter(
+          (user) => user.email !== email
+        );
+        console.log("Fetched users: ", filteredUsersData);
+        setUsers(filteredUsersData);
+        setFilteredUsers(filteredUsersData);
+      } catch (error) {
+        console.error("Error fetching users: ", error);
+      }
     };
     fetchUsers();
   }, [email]);
 
   useEffect(() => {
+    console.log("Filtering users...");
     const filteredResults = users.filter((user) =>
       user.name.toLowerCase().includes(search.toLowerCase())
     );
@@ -45,6 +50,12 @@ export default function SearchPage() {
     const [text, setText] = useState('');
 
     const handleRequest = async () => {
+      console.log("Handling request...");
+      if (!currentUser) {
+        console.error("User is not authenticated");
+        return;
+      }
+
       setLoading(true);
       try {
         await setDoc(
@@ -71,11 +82,11 @@ export default function SearchPage() {
             avatar: user.avatar,
           }
         );
+        console.log("Request sent successfully");
         setProblem('');
         setText('');
-        setShow(false);
       } catch (error) {
-        console.error(error);
+        console.error("Error sending request: ", error);
       } finally {
         setLoading(false);
       }
@@ -97,15 +108,13 @@ export default function SearchPage() {
           <ListItem.Subtitle>{user?.gender}</ListItem.Subtitle>
           <View>
             <TextInput
-              className="min-w-full"
               placeholder="Assunto:"
               value={problem}
               onChangeText={setProblem}
               style={styles.input}
             />
             <TextInput
-              className="min-w-full"
-              placeholder=" Digite aqui:"
+              placeholder="Digite aqui:"
               value={text}
               onChangeText={setText}
               style={styles.input}
@@ -134,7 +143,7 @@ export default function SearchPage() {
           renderItem={({ item }) => (
             <Item
               user={item}
-              currentUser={currentUser}
+              currentUser={user} // Pass the user directly
               setSelectedUserContext={setSelectedUserContext}
             />
           )}
